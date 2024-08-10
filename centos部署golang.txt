@@ -1,0 +1,370 @@
+手动安装golang1.17
+
+https://www.cnblogs.com/nickchou/p/13252545.html
+
+wget https://golang.google.cn/dl/go1.17.13.linux-amd64.tar.gz
+
+tar -zxf go1.17.13.linux-amd64.tar.gz -C /usr/local
+
+vi /etc/profile 末尾添加以下配置
+
+#golang config
+export GOROOT=/usr/local/go 
+export GOPATH=/root/go
+export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
+
+mkdir /root/go
+source /etc/profile
+go env -w GOPROXY=https://goproxy.cn,direct
+--------------------------------------------------------------
+http://console.ucloud.cn/
+
+mkdir -p /var/gosrc
+cd /var/gosrc
+go mod init gosrc
+go mod tidy
+
+go env -w GOPROXY=https://goproxy.cn,direct
+
+http://114.67.203.81/goproxy
+
+go get github.com/gin-gonic/gin@v1.7.4
+
+mkdir -p /var/www/html/defaultwww/proxy/
+
+vi /etc/nginx/mime.types 添加
+application/x-mpegURL                            m3u8;
+
+vi /etc/nginx/nginx.conf
+
+root         /var/www/html/cdn.ys001.top;
+
+location / {
+                add_header 'Access-Control-Allow-Origin' '*';
+                add_header 'Access-Control-Allow-Credentials' 'true';
+                add_header 'Access-Control-Allow-Methods' 'GET, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'Accept,Authorization,Cache-Control,Content-Type,DNT,Keep-Alive,Origin,User-Agent,X-Requested-With,content-type,Authorization, x-ui-request,lang';
+        }
+
+        location /gpLogs {
+                proxy_pass  http://127.0.0.1:8100/gpLogs;
+        }
+
+        location /logDetail {
+                proxy_pass  http://127.0.0.1:8100/logDetail;
+        }
+
+        location /reset {
+                proxy_pass  http://127.0.0.1:8100/reset;
+        }
+-----------------------------------------------
+vi /var/gosrc/goserver.service
+
+[Unit]
+Description=The gin systemd HTTP
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/gosrc/
+ExecStart=/var/gosrc/server
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+-----------------------------------------------
+cp ./goserver.service /etc/systemd/system/
+systemctl daemon-reload
+----------------------------------------
+通过 systemctl 启动服务
+
+# 每一次修改ExecStart都需执行
+systemctl daemon-reload
+
+# 查看状态
+systemctl status goserver.service
+
+# 自启动
+systemctl enable goserver.service
+
+# 禁止自启动
+systemctl disable goserver.service
+
+# 启动服务
+systemctl start goserver.service
+
+# 停止服务
+systemctl stop goserver.service
+
+nginx反向代理
+
+vi /etc/nginx/conf.d/g.ys001.top.conf
+
+server {
+    listen 80;
+    server_name  g.ys001.top;
+
+    location / {
+        proxy_pass  http://127.0.0.1:8000;
+    }
+}
+
+--------------------------------------------------------------------------------
+安装nodejs
+
+下载 https://npm.taobao.org/mirrors/node/v16.11.1/node-v16.11.1-linux-x64.tar.gz
+
+cd /usr/local/bin/
+
+tar -xvf node-v16.11.1-linux-x64.tar.gz
+
+mv node-v16.11.1-linux-x64 Nodejs
+
+ln -s /usr/local/bin/Nodejs/bin/node /usr/bin/node
+ln -s /usr/local/bin/Nodejs/bin/npm /usr/bin/npm
+ln -s /usr/local/bin/Nodejs/bin/npx /usr/bin/npx
+----------------------------------------------------------------------------------
+systemctl stop goserver.service
+go build -ldflags "-s -w" server.go functions.go xigua.go kkys.go ptys.go hhyy.go fxys.go
+systemctl start goserver.service
+----------------------------------------------------------------------------------
+
+vi /var/gosrc/goproxy.service
+
+[Unit]
+Description=The go proxy
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/gosrc/
+ExecStart=/var/gosrc/goproxy
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+-----------------------------------------------
+cp ./goproxy.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable goproxy.service
+systemctl status goproxy.service
+systemctl start goproxy.service
+systemctl stop goproxy.service
+
+systemctl stop goproxy.service
+rm -rf /var/www/html/defaultwww/proxy/image
+rm -rf /var/www/html/defaultwww/proxy/video
+rm -rf /var/gosrc/goproxylog.txt
+go build -ldflags "-s -w" goproxy.go cert.go
+go build -ldflags "-s -w" goproxy.fanqie.go cert.go
+go build -ldflags "-s -w" goproxy.fqvoice.go cert.go
+go build -o goproxy -ldflags "-s -w" goproxy.11.17.go cert.go
+go build -o goproxy -ldflags "-s -w" goproxy.best.go cert.go
+systemctl start goproxy.service
+
+go get github.com慢，可以设置
+go env -w GOPROXY=https://goproxy.io,direct
+
+https://www.ipaddress.com/ip-lookup
+
+vi /etc/hosts
+140.82.114.4 github.com
+199.232.69.194 github.global.ssl.fastly.net
+
+前端 JS 解决m3u8直播拉流 跨域和403报错问题 反向代理 方法
+https://www.xiaoguan.net/posts/show/349
+
+使用nginx搭建hls点播(m3u8)
+https://blog.csdn.net/caodongfang126/article/details/104304950
+
+GOOS=linux GOARCH=amd64 go build goMiNiServer.go
+
+set CGO_ENABLED=1
+set GOARCH=amd64
+set GOOS=linux
+go build goMiNiServer.go
+
+go build -ldflags "-s -w" goMiNiServer.go
+--------------------------------------------------
+vi /var/gosrc/gominiserver.service
+
+[Unit]
+Description=The go mini server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/gosrc/
+ExecStart=/var/gosrc/goMiNiServer
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+---------------------------------------
+cp ./gominiserver.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable gominiserver.service
+systemctl disable gominiserver.service
+systemctl status gominiserver.service
+systemctl start gominiserver.service
+systemctl stop gominiserver.service
+
+systemctl stop gominiserver.service
+go build -ldflags "-s -w" goMiNiServer.go
+systemctl start gominiserver.service
+
+
+----------------------------------------
+使用cow翻墙
+
+curl -L git.io/cow | bash
+
+vi /root/.cow/rc
+
+国外服务器(ip 47.87.201.214)
+listen=cow://aes-128-cfb:password1234dfgh@0.0.0.0:8035
+
+国内服务器
+listen=http://0.0.0.0:8035
+dialTimeout=60s
+readTimeout=60s
+authTimeout=2h
+proxy=cow://aes-128-cfb:password1234dfgh@47.87.201.214:8035
+
+vi /var/gosrc/cow.service
+
+[Unit]
+Description=The cow server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/var/gosrc/
+ExecStart=/var/gosrc/cow -rc='/root/.cow/rc'
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+cp ./cow.service /etc/systemd/system/
+systemctl enable cow.service
+systemctl disable cow.service
+systemctl status cow.service
+systemctl start cow.service
+systemctl stop cow.service
+--------------------------------------------------
+https://gitee.com/mirrors/Proxy-Go
+
+快速安装
+curl -L https://mirrors.host900.com/https://github.com/snail007/goproxy/blob/master/install_auto.sh | bash
+
+>>> install path /usr/bin/proxy
+
+>>> configuration path /etc/proxy
+
+>>> uninstall just exec : rm /usr/bin/proxy && rm -rf /etc/proxy
+
+>>> How to using? Please visit : https://snail.gitee.io/proxy/manual/
+
+一级代理ip 47.87.201.214
+/usr/bin/proxy http -t tls -p ":8037" -C /etc/proxy/proxy.crt -K /etc/proxy/proxy.key
+
+vi /var/gosrc/gp8037.service
+
+[Unit]
+Description=The proxy server 8037
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/proxy http -t tls -p ":8037" -C /etc/proxy/proxy.crt -K /etc/proxy/proxy.key
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+cp /var/gosrc/gp8037.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable gp8037.service
+systemctl start gp8037.service
+systemctl status gp8037.service
+systemctl stop gp8037.service
+-------------------------------------------------------------------------------------
+二级代理ip 119.96.221.7
+
+/usr/bin/proxy http -t tcp -p ":8037" -T tls -P "47.87.201.214:8037" -C /etc/proxy/proxy.crt -K /etc/proxy/proxy.key
+
+vi /var/gosrc/gp8037.service
+
+[Unit]
+Description=The proxy server 8037
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/proxy http -t tcp -p ":8037" -T tls -P "47.87.201.214:8037" -C /etc/proxy/proxy.crt -K /etc/proxy/proxy.key
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+cp /var/gosrc/gp8037.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable gp8037.service
+systemctl start gp8037.service
+systemctl status gp8037.service
+systemctl stop gp8037.service
+systemctl disable gp8037.service
+----------------------------------------------------------------------------------
+安装nodejs
+
+yum install nodejs
+
+node -v
+----------------------------------------------------------------------------------
+flask 开机启动_nginx+uwsgi+python+flask环境搭建
+https://blog.csdn.net/weixin_39937312/article/details/113072158
+
+安装uwsgi
+pip3 install uwsgi
+
+cd /var/pysrc/txvideo
+
+uwsgi --http :5000 --wsgi-file jx.py --callable app
+
+vi /var/pysrc/txvideo/uwsgi.ini
+
+[uwsgi]
+http=0.0.0.0:5000
+chdir=/var/pysrc/txvideo/
+wsgi-file=jx.py
+pidfile=/var/pysrc/txvideo/uwsgi_txjx.pid
+callable=app
+processes=2
+threads=2
+buffer-size=65536
+
+vi /var/pysrc/txvideo/uwsgi.service
+[Unit]
+Description=uwsgi
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/uwsgi --ini /var/pysrc/txvideo/uwsgi.ini
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+cp /var/pysrc/txvideo/uwsgi.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable uwsgi.service
+systemctl start uwsgi.service
+systemctl status uwsgi.service
+systemctl stop uwsgi.service
+systemctl disable uwsgi.service
+-------------------------------------
+cd /var/pysrc/dyabogus
+

@@ -1,0 +1,195 @@
+http://wesien.cn/details/id/20.html
+
+yum -y update
+
+执行yum命令失败 https://help.aliyun.com/document_detail/148909.html
+centos8配置yum源 https://developer.aliyun.com/mirror/centos?spm=a2c6h.13651102.0.0.364c1b114SD7ww
+
+1. 备份
+rm -rf /etc/yum.repos.d/*
+
+wget -O /etc/yum.repos.d/CentOS-Base.repo https://mirrors.aliyun.com/repo/Centos-vault-8.5.2111.repo
+
+yum clean all && yum makecache
+----------------------------------------------------------------------------------------
+一、安装nginx
+yum -y install nginx
+
+设置开机启动
+
+systemctl enable nginx
+
+启动nginx
+
+systemctl stop nginx
+systemctl start nginx
+
+查看当前ip地址
+hostname -I | awk '{print $1}'
+
+查看nginx状态
+
+systemctl status nginx
+
+显示 enbaled 则设置开机启动成功
+
+systemctl is-enabled nginx.service
+
+二、安装mysql
+
+yum install mysql-server
+mysql -V
+
+检查是否已经设置为开机启动MySQL服务
+systemctl list-unit-files|grep mysqld
+
+设置开机启动
+systemctl enable mysqld.service
+
+启动
+systemctl start mysqld.service
+systemctl status mysqld
+
+mysqladmin -uroot -p password 新密码
+
+二、安装 MariaDB
+
+安装 MariaDB
+dnf install mariadb-server mariadb -y
+
+设置 MariaDB 服务开机自启
+systemctl enable mariadb
+
+启动服务
+systemctl start mariadb
+
+设置数据库（Mariadb）密码
+mysql_secure_installation
+
+重启mysql
+systemctl restart mariadb
+
+三、安装php7
+使用命令安装PHP 和关联的PHP模块
+yum -y install php php-opcache php-gd php-curl php-mysqlnd php-fpm php-json php-xml
+
+设置 PHP-FPM 服务开机自启
+systemctl enable php-fpm
+
+启动PHP-FPM
+systemctl start php-fpm
+
+修改配置文件 /etc/php.ini  然后重启
+
+date.timezone =Asia/Shanghai
+
+查看php 当前版本
+
+php -v
+四、Nginx Mariadb PHP 安装完成后 配置nginx
+--------------------------------------------------------------------------
+vi /etc/nginx/nginx.conf
+
+mkdir /var/www/html/defaultwww
+
+mkdir -p /var/www/html/defaultwww/fq/mp3
+
+vi /etc/nginx/conf.d/defaultwww.conf
+
+server {
+    listen      80;
+    server_name _;
+    root        /var/www/html/defaultwww;
+
+    location / {
+        index index.php;
+    }
+
+    location ~ \.php$ {
+	fastcgi_pass  unix:/run/php-fpm/www.sock;
+	fastcgi_index index.php;
+	fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+	include       fastcgi_params;
+    }
+}
+--------------------------------------------------------------------------
+mkdir /var/www/html/www.ys001.top
+
+vi /etc/nginx/conf.d/www.ys001.top.conf
+
+server {
+    listen      80;
+    server_name www.ys001.top ys001.top;
+    root        /var/www/html/www.ys001.top;
+
+    if ( $host !~ ^www ) {
+        return $scheme://www.$host$request_uri;
+    }
+
+    location / {
+        index index.php;
+    }
+
+    location ~ \.php$ {
+        fastcgi_pass  unix:/run/php-fpm/www.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include       fastcgi_params;
+    }
+}
+------------------------------------------
+安装ffmpeg
+
+mkdir -p /var/www/html
+cd /var/www/html
+wget https://johnvansickle.com/ffmpeg/builds/ffmpeg-git-amd64-static.tar.xz
+wget https://www.johnvansickle.com/ffmpeg/old-releases/ffmpeg-4.4.1-i686-static.tar.xz
+tar -xvJf ffmpeg-git-amd64-static.tar.xz
+------------------------------------------
+应用firewall相关命令控制防火墙
+
+1、查看firewall的状态
+firewall-cmd --state
+
+2、开放8050端口
+firewall-cmd --zone=public --add-port=8080-8081/tcp --permanent //永久
+firewall-cmd --zone=public --add-port=8080-8081/tcp //临时
+firewall-cmd --zone=public --add-port=80/tcp --permanent   # 永久开放80端口
+firewall-cmd --zone=public --remove-port=80/tcp --permanent  #永久关闭80端口
+firewall-cmd --reload   # 在不改变状态的条件下重新加载防火墙--配置立即生效
+
+3、查看防火墙的开放的端口
+firewall-cmd --list-ports
+firewall-cmd --permanent --list-ports
+
+4、重启防火墙(修改配置后要重启防火墙)
+firewall-cmd --reload
+--------------------------------------------
+百度云
+yum -y update --allowerasing --skip-broken --nobest
+
+卸载默认的python3.6.8
+
+rpm -qa|grep python3|xargs rpm -ev --allmatches --nodeps
+whereis python3 |xargs rm -frv
+whereis python |xargs rm -frv
+
+rpm -qa|grep yum|xargs rpm -ev --allmatches --nodeps
+whereis yum |xargs rm -frv
+whereis yum
+
+安装python3
+yum install -y gcc openssl-devel bzip2-devel libffi-devel
+
+mkdir -pv /opt/softwar && cd /opt/softwar
+wget https://mirrors.huaweicloud.com/python/3.11.9/Python-3.11.9.tgz
+tar -zxvf Python-3.11.9.tgz
+rm -rf Python-3.11.9.tgz
+cd Python-3.11.9
+./configure --prefix=/usr/local/python3.11.9/
+make && make install
+
+rm -rf /usr/bin/python3
+rm -rf /usr/bin/pip3
+ln -s /usr/local/python3.11.9/bin/python3 /usr/bin/python3
+ln -s /usr/local/python3.11.9/bin/pip3 /usr/bin/pip3
